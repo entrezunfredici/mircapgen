@@ -13,18 +13,18 @@ Périmètre = roadmap du cahier des charges (`mircapgen_cahier_des_charges_v0.md
 | Module | Version cible | Statut |
 |--------|---------------|--------|
 | Cadrage / cahier des charges | — | 🟡 V0 en cours de finalisation par l'utilisateur |
-| Initialisation du dépôt (packaging, outillage, CI) | 0.0 | ⚪ Non démarré |
-| Features (décorateur, registre, métadonnées) | 0.0 → 0.1 | ⚪ Non démarré |
-| Couche MCP (tools, adaptateur `mcp/`) | 0.0 | ⚪ Non démarré |
+| Initialisation du dépôt (packaging, outillage, CI) | 0.0 | 🟡 Packaging, lint, typage, tests en place ; CI non faite |
+| Features (décorateur, registre, métadonnées) | 0.0 → 0.1 | 🟡 0.0 livré (`@feature`, découverte, validation) ; métadonnées complètes en 0.1 |
+| Couche MCP (tools, adaptateur `mcp/`) | 0.0 | 🟢 0.0 livré (tools, HTTP, client en mémoire) |
 | Helper agent / découverte des capacités | 0.1 | ⚪ Non démarré |
-| Identification : clés personnelles (0.0 → 0.1), OAuth (0.2) ; authentification admin (0.3) | 0.0 → 0.3 | ⚪ Non démarré |
-| RBAC (utilisateurs, groupes, permissions, filtrage) | 0.1 | ⚪ Non démarré |
+| Identification : clés personnelles (0.0 → 0.1), OAuth (0.2) ; authentification admin (0.3) | 0.0 → 0.3 | 🟡 Clés vérifiées en HTTP (0.0) ; format provisoire, CLI et persistance en 0.1 |
+| RBAC (utilisateurs, groupes, permissions, filtrage) | 0.1 | 🟡 Groupes en code, permissions, plafond, filtrage livrés (0.0) |
 | Configuration | 0.1 | ⚪ Non démarré |
 | Secrets | 0.1 | ⚪ Non démarré |
 | Middleware / hooks (base 0.1, avancé 0.4) | 0.1 / 0.4 | ⚪ Non démarré |
-| Logs structurés | 0.1 | ⚪ Non démarré |
+| Logs structurés | 0.1 | 🟡 Journal d'appel JSON minimal (0.0) |
 | Interface d'administration + formulaires déclaratifs | 0.3 | ⚪ Non démarré |
-| Intégration pytest (fixtures, helpers RBAC) | 0.0 → 0.1 | ⚪ Non démarré |
+| Intégration pytest (fixtures, helpers RBAC) | 0.0 → 0.1 | 🟡 `mircapgen.testing.connect` (0.0) ; fixtures pytest en 0.1 |
 | CLI (`new`, `create`, `dev`, `test`, `inspect`, `check`, `docs`) | 0.1 | ⚪ Non démarré |
 | Dockerfile standard | 0.1 | ⚪ Non démarré |
 | Resources / prompts MCP, plugins, Vault | 0.4 | ⚪ Hors MVP |
@@ -33,7 +33,7 @@ Périmètre = roadmap du cahier des charges (`mircapgen_cahier_des_charges_v0.md
 
 Légende : ⚪ non démarré · 🟡 en cours · 🟢 livré · 🔴 bloqué
 
-**Code existant** : aucun. Le dépôt ne contient que le cahier des charges, `CLAUDE.md` et `.agents/`.
+**Code existant** : prototype 0.0 dans `src/mircapgen/` (65 tests, `ruff` et `pyright` strict propres). Exemple dans `examples/crm_service/`.
 
 ---
 
@@ -50,6 +50,28 @@ Légende : ⚪ non démarré · 🟡 en cours · 🟢 livré · 🔴 bloqué
 **Complément (même jour)** : §8.5 étendu (transmission par l'agent, modes anti-usurpation `trusted`/`scoped`/`signed`, plafond de permissions), §8.6 (provisioning optionnel), nouveau §8.7 (Features publiques), nouveau §9.0 (groupes en dur ou dynamiques), §34 questions 16-21 reformulées. Voir `DECISIONS.md`.
 
 **Dette / à faire** : les modes anti-usurpation sont une proposition à valider ; le canal de transmission dépend du SDK MCP retenu ; la section §1 et le schéma §2.1 du cahier n'ont pas été reformulés.
+
+---
+
+### 2026-10-01 — Prototype 0.0 : Feature → tool MCP avec clés, droits et filtrage
+
+**Fichiers créés** : `pyproject.toml`, `.gitignore`, `src/mircapgen/` (`errors.py`, `context.py`, `logs.py`, `app.py`, `features/{spec,decorator,registry,discovery}.py`, `rbac/{permissions,models}.py`, `store/{base,memory}.py`, `auth/keys.py`, `core/dispatcher.py`, `mcp/{server,http,inprocess}.py`, `testing/`), `examples/crm_service/`, `tests/` (65 tests).
+
+**Utilisable** : `@feature` (marqueur, sans registre global), découverte d'un paquet, `MircapApp(...)`, groupes en code, clés personnelles vérifiées en HTTP (`Authorization: Bearer`), liste des tools filtrée par utilisateur, plafond de permissions, `Context` injecté sans apparaître dans le schéma, erreurs masquées, journal d'appel JSON, client de test en mémoire `mircapgen.testing.connect(app, user=… | groups=…)`. Démonstration : `cd examples && uv run python -m crm_service` (affiche deux clés de démonstration).
+
+**Résultats de la 0.0** : l'identité vérifiée par la clé est disponible dès `tools/list` et dans les Features avec le SDK officiel `mcp` 2.2.0 (`TokenVerifier` + contexte d'authentification) ; vérifié sur un vrai serveur HTTP. Une clé refusée reçoit un 401 et non un accès anonyme.
+
+**Hypothèses posées** : question 36 (registre) tranchée provisoirement par « marqueur + découverte » et question 37 (accès au contexte) par « paramètre annoté `Context` » ; format de clé `mk_<8 hex>_<secret>` provisoire (question 19) ; l'identité est transportée dans les `claims` du jeton d'accès du SDK (objet `Identity`) ; `starlette` et `uvicorn` déclarés directement car importés.
+
+**Dette / à faire** : non testé avec un client réel (Claude Code, Hermes) ; stdio non géré (question 26) ; `tools/list` sans pagination ; pas de vérification de `Origin` ni de HTTPS (question 27) ; Helper limité à un texte `instructions` (questions 10 et 31) ; `last_used_at`, CLI, persistance SQL et migrations en 0.1 ; licence non choisie.
+
+---
+
+### 2026-10-01 — Décorateur `@feature` (cahier §3, §32, §34 question 25)
+
+**Fichiers modifiés** : `mircapgen_cahier_des_charges_v0.md` (9 exemples `@mircap.feature` remplacés par `@feature`, §3, §32, §34 questions 25 tranchée, 36-37 ajoutées), `.agents/DECISIONS.md`.
+
+**Décision** : `@feature`, importé depuis `mircapgen`. Conséquences : registre des Features et accès au contexte à définir (questions 36 et 37 du cahier).
 
 ---
 

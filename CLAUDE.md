@@ -42,7 +42,7 @@ Après chaque ticket ou tâche significative, tu **dois** mettre à jour :
 
 Python · SDK officiel `mcp` v2 (isolé derrière l'adaptateur `mcp/`) · `pytest` · manifeste `mircap.yaml` · CLI `mircapgen`.
 Python 3.11+ · `pyproject.toml` + hatchling + `uv` · `ruff` · `pyright` · Starlette · Pydantic v2 · PyYAML. Installation : `uv sync`. Vérifications : `uv run pytest`, `uv run ruff check`, `uv run ruff format`, `uv run pyright`.
-Templates admin, persistance : **non tranchés** — voir `DECISIONS.md` (Questions ouvertes).
+Persistance : contrat `Store`, `SqlStore` sur SQLAlchemy Core + Alembic, SQLite par défaut. Templates admin : **non tranchés** — voir `DECISIONS.md` (Questions ouvertes).
 
 ---
 
@@ -56,7 +56,7 @@ Templates admin, persistance : **non tranchés** — voir `DECISIONS.md` (Questi
 - Erreurs : hiérarchie `MircapError` — jamais d'exception Python brute vers un agent
 - Type hints + docstrings (français) sur toute API publique
 - Tests avec `pytest` : cas nominal + cas limites + erreurs attendues (+ tests de sécurité pour auth/RBAC/secrets)
-- Ne pas ajouter de dépendance externe sans la signaler (voir `CONVENTIONS.md` pour la liste approuvée — vide au départ)
+- Ne pas ajouter de dépendance externe sans la signaler (voir `CONVENTIONS.md` pour la liste approuvée)
 - Respecter l'anti-périmètre : pas de framework web généraliste, ORM, IAM complet, orchestrateur d'agents ni moteur LLM
 - Identifiants de code en anglais ; docstrings, commentaires, messages utilisateur/agent en français
 - Commits : `[ADD]` nouveau · `[IMP]` amélioration · `[REF]` refacto · `[FIX]` bug

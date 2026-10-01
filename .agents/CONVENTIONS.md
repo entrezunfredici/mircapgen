@@ -142,8 +142,7 @@ my-mcp-service/
     permission="customer.delete",
     risk="high",
 )
-async def delete_customer(customer_id: int) -> None:
-    ...
+async def delete_customer(customer_id: int) -> None: ...
 ```
 
 Le décorateur enregistre la Feature ; l'exposition MCP, la validation, le RBAC, les logs et la documentation sont produits par le framework. Le corps de la fonction ne contient **que** de la logique métier.

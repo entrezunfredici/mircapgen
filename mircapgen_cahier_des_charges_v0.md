@@ -115,14 +115,11 @@ Le développeur ne devrait pas avoir à écrire directement toute la couche MCP 
 Exemple conceptuel :
 
 ```python
-@mircap.feature(
-    name="customer.search",
-    description="Recherche un client",
-    permission="customer.read"
-)
-async def search_customer(query: str):
-    ...
+@feature(name="customer.search", description="Recherche un client", permission="customer.read")
+async def search_customer(query: str): ...
 ```
+
+Le décorateur s'importe depuis le paquet : `from mircapgen import feature`.
 
 À partir de cette déclaration, Mircapgen pourrait automatiquement gérer :
 
@@ -164,15 +161,14 @@ Une Feature déclare `permission` ou `public=True` (§8.9, §24) ; si les deux s
 Exemple :
 
 ```python
-@mircap.feature(
+@feature(
     name="customer.delete",
     label="Supprimer un client",
     description="Supprime définitivement un client",
     permission="customer.delete",
-    tags=["customer", "dangerous"]
+    tags=["customer", "dangerous"],
 )
-async def delete_customer(customer_id: int):
-    ...
+async def delete_customer(customer_id: int): ...
 ```
 
 ---
@@ -329,12 +325,8 @@ Une Feature peut être exposée automatiquement sous forme de tool MCP.
 Exemple :
 
 ```python
-@mircap.feature(
-    name="customer.search",
-    mcp=True
-)
-async def search_customer(query: str):
-    ...
+@feature(name="customer.search", mcp=True)
+async def search_customer(query: str): ...
 ```
 
 Mircapgen génère automatiquement le tool correspondant.
@@ -344,12 +336,8 @@ Mircapgen génère automatiquement le tool correspondant.
 Le développeur doit pouvoir décider qu'une Feature reste interne.
 
 ```python
-@mircap.feature(
-    name="customer.reindex",
-    mcp=False
-)
-async def reindex_customers():
-    ...
+@feature(name="customer.reindex", mcp=False)
+async def reindex_customers(): ...
 ```
 
 ---
@@ -599,13 +587,8 @@ Règles :
 Le développeur peut déclarer une Feature **publique**, c'est-à-dire appelable sans utilisateur identifié. C'est un choix explicite, Feature par Feature.
 
 ```python
-@mircap.feature(
-    name="system.status",
-    description="Indique l'état du service",
-    public=True
-)
-async def system_status():
-    ...
+@feature(name="system.status", description="Indique l'état du service", public=True)
+async def system_status(): ...
 ```
 
 Règles :
@@ -654,10 +637,8 @@ Cette liste peut ensuite être **complétée par l'administrateur** si le dével
 
 ```python
 class AccessSettings(AdminForm):
-
     groups = GroupsField(
-        label="Groupes de droits",
-        assignable_permissions=["customer.read", "invoice.read"]
+        label="Groupes de droits", assignable_permissions=["customer.read", "invoice.read"]
     )
 ```
 
@@ -687,7 +668,7 @@ Les permissions doivent pouvoir être associées directement aux Features.
 Exemple :
 
 ```python
-@mircap.feature(
+@feature(
     name="customer.delete",
     permission="customer.delete"
 )
@@ -746,10 +727,8 @@ Cela évite de présenter inutilement à un agent des outils qu'il ne pourra jam
 
 ```python
 class CustomerDeleteSettings(AdminForm):
-
     permission = PermissionField(
-        feature="customer.delete",
-        assignable_permissions=["customer.write", "customer.delete"]
+        feature="customer.delete", assignable_permissions=["customer.write", "customer.delete"]
     )
 ```
 
@@ -807,24 +786,11 @@ Exemple conceptuel :
 
 ```python
 class OpenAIConfig(AdminForm):
+    api_key = SecretField(label="API key", required=True)
 
-    api_key = SecretField(
-        label="API key",
-        required=True
-    )
+    model = SelectField(label="Model", choices=["model-a", "model-b"])
 
-    model = SelectField(
-        label="Model",
-        choices=[
-            "model-a",
-            "model-b"
-        ]
-    )
-
-    timeout = IntegerField(
-        label="Timeout",
-        default=30
-    )
+    timeout = IntegerField(label="Timeout", default=30)
 ```
 
 Mircapgen génère automatiquement :
@@ -865,7 +831,6 @@ Exemple :
 
 ```python
 class Config(MircapConfig):
-
     api_url: str
     api_key: Secret
     timeout: int = 30
@@ -1102,10 +1067,7 @@ Exemple :
 ```python
 def test_search(mcp_client):
 
-    result = mcp_client.call_tool(
-        "customer.search",
-        {"query": "Dupont"}
-    )
+    result = mcp_client.call_tool("customer.search", {"query": "Dupont"})
 
     assert result.success
 ```
@@ -1468,7 +1430,7 @@ accès administrateur
 Mircapgen pourrait permettre :
 
 ```python
-@mircap.feature(
+@feature(
     name="server.restart",
     permission="server.restart",
     risk="high"
@@ -1797,35 +1759,26 @@ Exemple conceptuel d'un petit service Mircapgen :
 ```python
 from mircapgen import MircapApp, feature
 
-app = MircapApp(
-    name="crm-service"
-)
+app = MircapApp(name="crm-service")
 
 
 @feature(
     name="customer.search",
     description="Recherche un client dans le CRM",
-    permission="customer.read"
+    permission="customer.read",
 )
 async def search_customer(query: str):
 
-    return [
-        {
-            "id": 42,
-            "name": "John Doe"
-        }
-    ]
+    return [{"id": 42, "name": "John Doe"}]
 
 
 @feature(
     name="customer.delete",
     description="Supprime un client",
     permission="customer.delete",
-    risk="high"
+    risk="high",
 )
-async def delete_customer(customer_id: int):
-
-    ...
+async def delete_customer(customer_id: int): ...
 
 
 app.run()
@@ -1845,7 +1798,7 @@ admin authentication
 
 Ces éléments sont pris en charge par Mircapgen.
 
-L'écriture exacte de l'API (`@mircap.feature`, `@feature` ou `@app.feature`) n'est pas encore figée : les exemples de ce document sont indicatifs (§34).
+Le décorateur se nomme `@feature` et s'importe depuis le paquet (`from mircapgen import feature`) ; les autres éléments de l'API (`MircapApp`, accès au contexte) restent indicatifs (§34).
 
 ---
 
@@ -1882,8 +1835,8 @@ Le framework doit réduire fortement le boilerplate tout en gardant une architec
 
 Les points suivants devront être discutés avant ou pendant le développement du prototype :
 
-1. Quel framework web sous-jacent utiliser pour l'admin et les routes HTTP ?
-2. Quel système de validation de données utiliser ?
+1. Quel framework web sous-jacent utiliser pour l'admin et les routes HTTP ? *Tranchée : Starlette, déjà requis par le SDK `mcp`.*
+2. Quel système de validation de données utiliser ? *Tranchée : Pydantic v2, déjà requis par le SDK `mcp`.*
 3. Quel moteur de templates utiliser pour l'interface admin ?
 4. Faut-il embarquer un ORM ou seulement définir une interface de persistance ? *Tranchée : interface `Store`, `SqlStore` fondé sur SQLAlchemy Core (sans ORM) (§12.2).*
 5. Quel stockage par défaut utiliser pour utilisateurs, groupes et configuration ? *Tranchée : SQLite par défaut, base serveur au choix du développeur par configuration (§12.2).*
@@ -1897,7 +1850,7 @@ Les points suivants devront être discutés avant ou pendant le développement d
 13. Quelle API publique doit être considérée stable à terme ?
 14. Quel système de plugins adopter ?
 15. Comment gérer le versioning d'un microservice Mircapgen ?
-16. Valider par un prototype que le mécanisme de vérification de jeton du SDK MCP officiel (`TokenVerifier`) permet de traiter uniformément clés personnelles et jetons OAuth (§8.4), et que l'utilisateur identifié est disponible dès `tools/list` pour filtrer les Features (§9.1) ainsi que dans les Features (`ctx.user`). *Principe acquis : le modèle de langage n'est jamais source d'identité.*
+16. Valider par un prototype que le mécanisme de vérification de jeton du SDK MCP officiel (`TokenVerifier`) permet de traiter uniformément clés personnelles et jetons OAuth (§8.4), et que l'utilisateur identifié est disponible dès `tools/list` pour filtrer les Features (§9.1) ainsi que dans les Features (`ctx.user`). *Résultat de la 0.0 : vérifié pour les clés en HTTP ; le cas des jetons OAuth reste à vérifier en 0.2.* *Principe acquis : le modèle de langage n'est jamais source d'identité.*
 17. Quel fournisseur d'identité de référence pour OAuth (§8.6) et faut-il prévoir plus tard un serveur d'autorisation intégré optionnel (plugin) pour les services sans fournisseur d'identité ? *Principe acquis : Mircapgen est serveur de ressources, pas fournisseur d'identité.*
 18. Une Feature publique doit-elle être appelable sans aucun identifiant d'accès, ou le développeur peut-il exiger un identifiant valide pour toute connexion (§8.9) ? *Tranchée : Feature par Feature, avec l'option `identity.require_credential` pour exiger un identifiant valide partout (§8.9).*
 19. Clés personnelles (§8.5) : format et préfixe, algorithme de hachage, expiration par défaut, création en libre-service, rotation, limitation des essais.
@@ -1906,7 +1859,7 @@ Les points suivants devront être discutés avant ou pendant le développement d
 22. Faut-il relier les scopes OAuth au plafond de permissions (§8.7) ? Attention : avec l'enregistrement dynamique de client (DCR), le `client_id` change à chaque connexion, donc un plafond par `client_id` ne fonctionne qu'avec CIMD ou un client préenregistré.
 23. Compatibilité réelle : tester le flux OAuth et les clés avec Claude, ChatGPT, Hermes et OpenClaw avant de figer l'API (§8.4).
 24. Journal d'audit : où est-il stocké et comment est-il protégé contre la modification (§15) ?
-25. Écriture définitive de l'API publique : `@mircap.feature`, `@feature` ou `@app.feature` (§3, §32) ?
+25. Écriture définitive de l'API publique : `@mircap.feature`, `@feature` ou `@app.feature` (§3, §32) ? *Tranchée : `@feature`, importé depuis `mircapgen`.*
 26. Identité en stdio : comment une clé est-elle fournie (variable d'environnement) et quel modèle de confiance appliquer (§8.5) ?
 27. Sécurité du transport HTTP : refus ou avertissement sans HTTPS, validation de l'en-tête `Origin`, limitation des essais de clés (§8.5) ?
 28. Autorisation au niveau des données : le RBAC s'arrête à la Feature. Comment documenter et outiller le filtrage par utilisateur dans les Features (`ctx.user`) ?
@@ -1917,6 +1870,8 @@ Les points suivants devront être discutés avant ou pendant le développement d
 33. Mode d'accès à la base : SQLAlchemy synchrone exécuté dans des threads, ou asynchrone avec des pilotes asynchrones (§12.2) ? *Tranchée : synchrone dans des threads, invisible pour le développeur.*
 34. Une Feature déclarant à la fois `permission` et `public=True` : quelle règle de résolution, la plus permissive ou la plus restrictive (§24) ? *Tranchée : la plus restrictive (la permission est exigée, `public` est ignoré), avec avertissement.*
 35. Le formulaire `PermissionField` peut-il rendre une Feature publique, ou seulement changer la permission exigée (§9.2) ? *Tranchée : seulement changer la permission.*
+36. Registre des Features : global au module (simple, mais partagé entre applications et tests) ou lié à l'application `MircapApp` ; comment isoler les tests (§3, §32) ? *Tranchée provisoirement : pas de registre global ; `@feature` marque la fonction et l'application découvre les fonctions marquées.*
+37. Comment une Feature accède-t-elle au contexte (`ctx.user`) : paramètre annoté du type `Context`, ou fonction d'accès (§8.8) ? *Implémentée provisoirement en 0.0 : paramètre annoté `Context`, à valider.*
 
 Ces décisions devront être prises progressivement afin d'éviter de figer prématurément une architecture trop complexe.
 

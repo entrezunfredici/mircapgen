@@ -211,6 +211,34 @@ L'identité utilisateur vient du contexte de connexion MCP, jamais d'un paramèt
 
 **Cas `permission` + `public=True`** : l'utilisateur envisageait « le plus permissif fait foi » ; l'agent a signalé que cela contredit *deny by default* et *least privilege* (une erreur de copier-coller rendrait publique une Feature protégée) et a recommandé la règle la plus restrictive. **Retenu (recommandation de l'agent, validée par l'utilisateur)** : la permission est exigée, `public` est ignoré, un avertissement est journalisé et `check` le signale. `PermissionField` peut seulement changer la permission, jamais rendre une Feature publique.
 
+### 2026-10-01 — Le décorateur de Feature se nomme `@feature`
+
+**Contexte** : l'écriture de l'API (`@mircap.feature`, `@feature` ou `@app.feature`) était ouverte (cahier §34, question 25) ; l'API publique est le produit.
+
+**Décision** : `@feature`, importé depuis le paquet (`from mircapgen import feature`), comme dans l'exemple du §32. Choix de l'utilisateur, motivé par la brièveté.
+
+**Alternative écartée** : `@mircap.feature` (plus long, suppose un objet `mircap` à définir) ; `@app.feature` (lie chaque Feature à l'instance de l'application dès l'écriture).
+
+**Conséquences** : le décorateur n'est lié à aucune instance d'application, donc le registre des Features est a priori global au module ; cela pose la question de l'isolation des tests et de plusieurs applications dans un même processus (question 40) ; l'accès au contexte (`ctx.user`) reste à définir (question 41). Les noms `MircapApp` et `app.run()` du §32 restent indicatifs.
+
+### 2026-10-01 — Prototype 0.0 : choix d'implémentation
+
+**Contexte** : première implémentation du cahier des charges (§28.2) sur le SDK officiel `mcp` 2.2.0.
+
+**Décision** :
+- **Serveur MCP bas niveau** (`mcp.server.lowlevel.Server` avec `on_list_tools` et `on_call_tool`) plutôt que `MCPServer` : la liste des tools et le traitement des appels passent par le `Dispatcher` de Mircapgen.
+- **`@feature` est un marqueur** : il attache une `FeatureSpec` à la fonction sans état global ; `MircapApp` découvre les fonctions marquées en parcourant un module ou un paquet (questions 36 et 37 : provisoire, validation de l'utilisateur en attente pour la 37 — paramètre annoté `Context`).
+- **Identité transportée dans l'`AccessToken` du SDK** (`claims["mircap_identity"]`) par un `TokenVerifier` de clés, lue dans les handlers par `get_access_token()`. En test, une source d'identité fixe la remplace.
+- **Un identifiant présenté mais refusé donne un 401**, jamais un accès anonyme (middleware `CredentialGateMiddleware`).
+- **Un tool caché et un tool inexistant donnent la même réponse** (`UnknownFeatureError`), pour ne pas révéler l'existence d'une Feature.
+- **Les arguments des Features ne sont jamais journalisés**, et les erreurs de validation n'affichent jamais les valeurs reçues.
+- **Format de clé provisoire** : `mk_<8 hex>_<secret>`, empreinte SHA-256 (clé aléatoire à haute entropie, hachage lent inutile).
+- `starlette` et `uvicorn` déclarés comme dépendances directes.
+
+**Alternative écartée** : `MCPServer` (filtrage par utilisateur à bricoler dans le middleware provisoire du SDK) ; registre global de Features ; lire l'identité dans un en-tête personnalisé (le SDK déconseille d'y mettre l'identité).
+
+**Conséquences** : le SDK étant en 2.x avec un middleware « provisoire », seule l'authentification par `TokenVerifier` et `get_access_token()` est utilisée côté sécurité ; l'identité doit rester un objet `Identity` non sérialisé dans les claims (à revoir si le SDK les sérialise un jour).
+
 ---
 
 ## Questions ouvertes
@@ -228,18 +256,18 @@ L'identité utilisateur vient du contexte de connexion MCP, jamais d'un paramèt
 | 6 | ~~Gestion des migrations de base de données ?~~ | Persistance | **Résolue** : Alembic, commandes `mircapgen db ...`, en avant uniquement |
 | 7 | ~~Déclaration précise des permissions (format, jokers, registre) ?~~ | RBAC | **Résolue** : dans le décorateur, paramétrable par formulaire (cahier §9.2) |
 | 8 | ~~Permissions obligatoires sur toutes les Features MCP ?~~ | Features, sécurité | **Résolue** : `permission` ou `public=True` requis, sinon Feature inaccessible + erreur journalisée ; cas des deux : question 38 |
-| 9 | Association resources / prompts aux Features ? | 0.2 | Reportée |
+| 9 | Association resources / prompts aux Features ? | 0.4 | Reportée |
 | 10 | Chargement dynamique des instructions du Helper ? | Helper | Ouverte |
 | 11 | Mécanismes de confirmation pour les Features sensibles (`risk`) ? | Sécurité | Ouverte |
 | 12 | Périmètre de l'admin déclarative ? | Admin | Ouverte |
 | 13 | Quelle API publique est considérée stable ? | 1.0 | Reportée |
-| 14 | Système de plugins ? | 0.2 | Reportée |
+| 14 | Système de plugins ? | 0.4 | Reportée |
 | 15 | Versioning d'un microservice Mircapgen ? | Manifeste | Ouverte |
 | 16 | ~~Version minimale de Python, outil de packaging, lint/format/typage ?~~ | Initialisation | **Résolue** : Python 3.11+, hatchling, uv, ruff, pyright (voir « Outillage Python et dépendances du cœur ») |
 | 17 | ~~Choix du SDK MCP à encapsuler ?~~ | Couche MCP | **Résolue : SDK officiel `mcp` v2** (voir décision ci-dessus). Étude 2026-09-29 : candidats = SDK officiel `mcp` v2 (classe `MCPServer`, ex-FastMCP intégré) et FastMCP 3 (PrefectHQ, Apache-2.0). Les deux : TokenVerifier/AccessToken avec claims, client de test en mémoire, transports stdio/HTTP. FastMCP 3 masque nativement les tools par utilisateur (`auth=` sur le composant, filtrage de `list_tools`, activation par session) ; le SDK officiel ne le fait pas nativement (middleware « provisoire » ou handler bas niveau). Aucun des deux ne permet de simuler un utilisateur en test : `as_user` / `as_group` sont à construire. Docs SDK officiel : les en-têtes sont des entrées client, « jamais l'identité ». Recommandation : spike comparatif avant de choisir, et isoler le SDK derrière un adaptateur `mcp/`. |
 | 18 | Priorité entre sources de configuration (env, fichier, base, admin, secrets) ? | Config | Ouverte (§12.1) |
 | 19 | Schéma de branches Git ? | Workflow | Ouverte (ajoutée) |
-| 20 | Prototype : `TokenVerifier` traite-t-il uniformément clés et jetons OAuth, et l'utilisateur est-il disponible dès `tools/list` (filtrage §9.1) et dans les Features (`ctx.user`) ? | Auth, MCP | Ouverte (cahier §34 q.16) |
+| 20 | Prototype : `TokenVerifier` traite-t-il uniformément clés et jetons OAuth, et l'utilisateur est-il disponible dès `tools/list` (filtrage §9.1) et dans les Features (`ctx.user`) ? | Auth, MCP | **Partiellement résolue (0.0)** : oui pour les clés en HTTP, utilisateur disponible dès `tools/list` et dans les Features ; le cas des jetons OAuth reste à vérifier en 0.2 (cahier §34 q.16) |
 | 21 | Fournisseur d'identité de référence pour OAuth ; serveur d'autorisation intégré optionnel plus tard (plugin) ? | Auth OAuth | Ouverte (cahier §34 q.17) |
 | 22 | ~~Feature publique : appelable sans aucun identifiant, ou identifiant exigé pour toute connexion (option) ?~~ | Features, sécurité | **Résolue** : Feature par Feature + option `identity.require_credential` (cahier §8.9) |
 | 23 | Clés personnelles : format, préfixe, hachage, expiration par défaut, libre-service, rotation, limitation des essais ? | Auth clés | Ouverte (cahier §34 q.19) |
@@ -248,7 +276,7 @@ L'identité utilisateur vient du contexte de connexion MCP, jamais d'un paramèt
 | 26 | Relier les scopes OAuth au plafond de permissions ? (le `client_id` d'un client DCR change à chaque connexion : un plafond par `client_id` ne tient qu'avec CIMD ou un client préenregistré) | Auth OAuth | Ouverte (cahier §34 q.22) |
 | 27 | Tests réels du flux OAuth et des clés avec Claude, ChatGPT, Hermes et OpenClaw avant de figer l'API ? | Auth | Ouverte (cahier §34 q.23) |
 | 28 | Stockage et protection du journal d'audit ? | Logs, sécurité | Ouverte (cahier §34 q.24) |
-| 29 | Écriture définitive de l'API publique (`@mircap.feature` / `@feature` / `@app.feature`) ? | API publique | Ouverte (cahier §34 q.25) |
+| 29 | ~~Écriture définitive de l'API publique (`@mircap.feature` / `@feature` / `@app.feature`) ?~~ | API publique | **Résolue** : `@feature` importé depuis `mircapgen` (cahier §34 q.25) |
 | 30 | Identité en stdio (clé en variable d'environnement ?) | Auth | Ouverte (cahier §34 q.26) |
 | 31 | Sécurité du transport HTTP : HTTPS, `Origin`, limitation des essais de clés ? | Sécurité | Ouverte (cahier §34 q.27) |
 | 32 | Autorisation au niveau des données (filtrage par utilisateur dans les Features) ? | RBAC | Ouverte (cahier §34 q.28) |
@@ -259,3 +287,5 @@ L'identité utilisateur vient du contexte de connexion MCP, jamais d'un paramèt
 | 37 | ~~SQLAlchemy synchrone en threads, ou asynchrone avec pilotes asynchrones ?~~ | Persistance | **Résolue** : synchrone en threads, invisible (cahier §34 q.33) |
 | 38 | ~~Feature déclarant `permission` **et** `public=True` : résolution la plus permissive ou la plus restrictive ?~~ | Sécurité | **Résolue** : la plus restrictive, avec avertissement (cahier §34 q.34) |
 | 39 | ~~`PermissionField` peut-il rendre une Feature publique, ou seulement changer la permission ?~~ | Admin, sécurité | **Résolue** : seulement changer la permission (cahier §34 q.35) |
+| 40 | ~~Registre des Features global au module ou lié à `MircapApp` ; isolation des tests ?~~ | API publique, tests | **Résolue provisoirement** : marqueur + découverte, sans état global (cahier §34 q.36) |
+| 41 | Accès d'une Feature au contexte (`ctx.user`) : paramètre annoté `Context` ou fonction d'accès ? | API publique | **Implémentée provisoirement** : paramètre annoté `Context`, à valider (cahier §34 q.37) |
