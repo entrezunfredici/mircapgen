@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mircapgen"
+version = "0.0.1"
+description = "Framework Python pour créer des microservices MCP sécurisés destinés aux agents IA."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "anyio>=4.9",
+    "mcp>=2,<3",
+    "pydantic>=2.12",
+    "PyYAML>=6",
+    "starlette>=0.48",
+    "uvicorn>=0.31",
+]
+
+[dependency-groups]
+dev = [
+    "anyio>=4.9",
+    "pytest>=8",
+    "pyright>=1.1.400",
+    "ruff>=0.8",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mircapgen"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["examples"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests", "examples"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.pyright]
+include = ["src"]
+pythonVersion = "3.11"
+typeCheckingMode = "strict"
