@@ -167,3 +167,15 @@ Légende : ⚪ non démarré · 🟡 en cours · 🟢 livré · 🔴 bloqué
 - Trancher les questions ouvertes de `DECISIONS.md` avant ou pendant le premier ticket d'implémentation.
 - Renseigner les commandes de lint/format/typage/tests dans `CONVENTIONS.md` et `AGENT.md` §7 une fois l'outillage posé.
 - Le fichier `.agents/2024 Référentiel Expert en développement logiciel YNOV (2).md` a été conservé tel quel (document de référence scolaire, non lié au code) ; à déplacer hors du dépôt ou à supprimer si inutile.
+
+---
+
+### 2026-10-13 — Intégration continue (GitHub Actions)
+
+**Fichiers créés** : `.github/workflows/ci.yml`.
+
+**Utilisable** : trois jobs sur push `main`, pull request et cron hebdomadaire : `quality` (`ruff check`, `ruff format --check`, `pyright`), `tests` (`pytest`, matrice Ubuntu/Windows × Python 3.11/3.13), `audit` (`pip-audit` sur l'export de `uv.lock`). Les commandes sont celles de `CONVENTIONS.md`, `uv sync --locked` garantit que le verrou est à jour.
+
+**Hypothèses posées** : dépôt hébergé sur GitHub ; Windows dans la matrice car le développement se fait sous Windows.
+
+**Dette / à faire** : activer la protection de branche `main` exigeant ces jobs ; ajouter couverture, build du wheel et Dockerfile (0.1) ; épingler les actions par SHA avant 1.0.

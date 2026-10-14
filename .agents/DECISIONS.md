@@ -289,3 +289,15 @@ L'identité utilisateur vient du contexte de connexion MCP, jamais d'un paramèt
 | 39 | ~~`PermissionField` peut-il rendre une Feature publique, ou seulement changer la permission ?~~ | Admin, sécurité | **Résolue** : seulement changer la permission (cahier §34 q.35) |
 | 40 | ~~Registre des Features global au module ou lié à `MircapApp` ; isolation des tests ?~~ | API publique, tests | **Résolue provisoirement** : marqueur + découverte, sans état global (cahier §34 q.36) |
 | 41 | Accès d'une Feature au contexte (`ctx.user`) : paramètre annoté `Context` ou fonction d'accès ? | API publique | **Implémentée provisoirement** : paramètre annoté `Context`, à valider (cahier §34 q.37) |
+
+---
+
+### 2026-10-13 — CI GitHub Actions et audit des dépendances
+
+**Contexte** : le projet a déjà `pytest`, `ruff` et `pyright` ; sans CI, rien n'empêche de fusionner du code qui échoue, et la promesse de sécurité du framework exige de surveiller les CVE des dépendances.
+
+**Décision** : GitHub Actions, avec `uv sync --locked`. Audit via `pip-audit` lancé par `uvx` sur `uv export` : **outil de CI uniquement, non ajouté à `pyproject.toml`**. Audit rejoué chaque semaine (cron).
+
+**Alternative écartée** : `pip-audit` dans le groupe `dev` (dépendance supplémentaire à maintenir pour un usage uniquement CI) ; Dependabot/CodeQL reportés.
+
+**Conséquences** : toute PR doit passer lint, format, typage et tests sur 2 OS et 2 versions de Python ; une CVE sur une dépendance fait échouer le job `audit`.

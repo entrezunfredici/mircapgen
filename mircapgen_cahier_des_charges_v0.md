@@ -398,11 +398,11 @@ Personne (ou entité) pour le compte de laquelle l'agent agit.
 
 ## 8.2 Résumé des rôles
 
-| Acteur | Interface | Preuve d'identité | Sert à | Porte des groupes ? |
-|--------|-----------|-------------------|--------|---------------------|
-| Administrateur | Admin UI | mot de passe + session | paramétrer le service | Non |
-| Client MCP | Endpoint MCP | présente l'identifiant d'accès | se connecter et agir | Non |
-| Utilisateur de l'agent | (via l'agent) | clé personnelle ou jeton OAuth | autorisation, visibilité, audit | **Oui** |
+| Acteur                 | Interface     | Preuve d'identité               | Sert à                          | Porte des groupes ? |
+| ---------------------- | ------------- | -------------------------------- | -------------------------------- | ------------------- |
+| Administrateur         | Admin UI      | mot de passe + session           | paramétrer le service           | Non                 |
+| Client MCP             | Endpoint MCP  | présente l'identifiant d'accès | se connecter et agir             | Non                 |
+| Utilisateur de l'agent | (via l'agent) | clé personnelle ou jeton OAuth  | autorisation, visibilité, audit | **Oui**       |
 
 ## 8.3 Authentification de l'administrateur
 
@@ -426,15 +426,15 @@ identity:
 
 Objectif commun : l'utilisateur **configure son agent une seule fois**, puis n'a plus rien à faire à l'usage. Les jetons OAuth se renouvellent automatiquement, et les clés n'expirent que si le développeur le décide.
 
-| | Clé personnelle | OAuth 2.1 |
-|---|---|---|
-| **Principe** | une clé secrète liée à un utilisateur, collée dans la configuration de l'agent | l'utilisateur se connecte une fois dans son navigateur, l'agent reçoit un jeton |
-| **Configuration** | une fois : coller la clé dans l'agent | une fois : ajouter l'URL du service et se connecter |
-| **À l'usage** | rien | rien (renouvellement automatique du jeton) |
-| **Qui délivre la preuve** | Mircapgen (l'administrateur crée la clé) | un fournisseur d'identité externe |
-| **Usage visé** | services internes, agents auto-hébergés, applications maison | services internes ou grand public, assistants grand public |
-| **Inscription d'utilisateurs** | créés par l'administrateur | création manuelle ou automatique (§8.8) |
-| **Prérequis** | aucun | un fournisseur d'identité compatible |
+|                                      | Clé personnelle                                                                    | OAuth 2.1                                                                        |
+| ------------------------------------ | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| **Principe**                   | une clé secrète liée à un utilisateur, collée dans la configuration de l'agent | l'utilisateur se connecte une fois dans son navigateur, l'agent reçoit un jeton |
+| **Configuration**              | une fois : coller la clé dans l'agent                                              | une fois : ajouter l'URL du service et se connecter                              |
+| **À l'usage**                 | rien                                                                                | rien (renouvellement automatique du jeton)                                       |
+| **Qui délivre la preuve**     | Mircapgen (l'administrateur crée la clé)                                          | un fournisseur d'identité externe                                               |
+| **Usage visé**                | services internes, agents auto-hébergés, applications maison                      | services internes ou grand public, assistants grand public                       |
+| **Inscription d'utilisateurs** | créés par l'administrateur                                                        | création manuelle ou automatique (§8.8)                                        |
+| **Prérequis**                 | aucun                                                                               | un fournisseur d'identité compatible                                            |
 
 Le framework doit permettre d'ajouter d'autres méthodes plus tard sans modifier le cœur.
 
@@ -486,14 +486,14 @@ Mircapgen se comporte comme un **serveur de ressources OAuth** standard du proto
 - publier les métadonnées de ressource protégée (RFC 9728) qui désignent le fournisseur d'identité ;
 - vérifier chaque jeton :
 
-| Revendication | Vérification |
-|---|---|
-| signature | clés publiques du fournisseur d'identité (JWKS), algorithme **fixé par la configuration**, jamais lu dans le jeton |
-| `iss` | doit figurer dans la liste des émetteurs de confiance |
-| `aud` | doit être **ce microservice** : un jeton émis pour un autre service est refusé, et un jeton reçu n'est jamais retransmis à un autre service |
-| `exp` / `iat` | jeton expiré ou émis dans le futur refusé ; durée de vie maximale imposée |
-| `sub` | identifie l'utilisateur ; doit correspondre à un utilisateur d'agent connu (ou créé si le provisioning est activé) |
-| `client_id` / `azp` | identifie le client MCP (Claude, ChatGPT…) ; sert au plafond de permissions |
+| Revendication           | Vérification                                                                                                                                         |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| signature               | clés publiques du fournisseur d'identité (JWKS), algorithme**fixé par la configuration**, jamais lu dans le jeton                            |
+| `iss`                 | doit figurer dans la liste des émetteurs de confiance                                                                                                |
+| `aud`                 | doit être**ce microservice** : un jeton émis pour un autre service est refusé, et un jeton reçu n'est jamais retransmis à un autre service |
+| `exp` / `iat`       | jeton expiré ou émis dans le futur refusé ; durée de vie maximale imposée                                                                        |
+| `sub`                 | identifie l'utilisateur ; doit correspondre à un utilisateur d'agent connu (ou créé si le provisioning est activé)                                |
+| `client_id` / `azp` | identifie le client MCP (Claude, ChatGPT…) ; sert au plafond de permissions                                                                          |
 
 **Prérequis côté fournisseur d'identité**
 
@@ -1562,26 +1562,31 @@ Contenu :
 Contenu :
 
 **Features et agent**
+
 - déclaration de Features avec toutes leurs métadonnées (label, description, instructions, constraints, permission, tags, version, `risk`, `public`) ;
 - validation des entrées et des sorties, génération des schémas ;
 - Helper global, instructions par Feature (`instructions.md`), découverte automatique ;
 - erreurs standardisées (`MircapError`).
 
 **Identité et droits**
+
 - utilisateurs d'agents persistés, groupes déclarés dans le code ;
 - clés personnelles complètes : hachage, révocation, expiration facultative, plafond propre, dernier usage ;
 - RBAC, plafond de permissions, filtrage de la visibilité, Features publiques ;
 - gestion par CLI (création d'utilisateurs, création et révocation de clés).
 
 **Configuration et secrets**
+
 - `MircapConfig` (variables d'environnement et fichier) et manifeste `mircap.yaml` ;
 - type `Secret` masqué partout (logs, erreurs, réponses, exports), backend par variables d'environnement.
 
 **Exploitation**
+
 - hooks de base `before`, `after`, `on_error` ;
 - logs structurés et journal d'audit avec filtrage des données sensibles.
 
 **Développement**
+
 - intégration `pytest` : `mcp_client`, `as_user`, `as_group`, `can_call`, tests de sécurité ;
 - CLI : `new`, `create feature`, `dev`, `test`, `inspect`, `check`, `user`, `key` ;
 - Dockerfile standard.
@@ -1599,17 +1604,17 @@ Contenu :
 
 ## 28.4 Repoussé après le MVP
 
-| Fonctionnalité | Version | Raison |
-|---|---|---|
-| OAuth 2.1 et fournisseur d'identité externe | 0.2 | nécessite un fournisseur d'identité et des tests avec les clients réels |
-| Création automatique d'utilisateurs | 0.2 | dépend d'OAuth |
-| Interface d'administration web | 0.3 | plus gros chantier, la CLI suffit pour commencer |
-| Formulaires déclaratifs, `GroupsField` | 0.3 | dépendent de l'interface d'administration |
-| Authentification de l'administrateur (mot de passe, sessions) | 0.3 | dépend de l'interface d'administration |
-| Resources et prompts MCP | 0.4 | hors du cœur « Features → tools » |
-| Système de plugins, secret managers (Vault…) | 0.4 | à définir après stabilisation du noyau |
-| Génération de documentation (`mircapgen docs`) | 0.4 | le Helper couvre le besoin des agents en 0.1 |
-| Observabilité (métriques, traces, OpenTelemetry) | 0.5 | les logs structurés suffisent au début |
+| Fonctionnalité                                               | Version | Raison                                                                     |
+| ------------------------------------------------------------- | ------- | -------------------------------------------------------------------------- |
+| OAuth 2.1 et fournisseur d'identité externe                  | 0.2     | nécessite un fournisseur d'identité et des tests avec les clients réels |
+| Création automatique d'utilisateurs                          | 0.2     | dépend d'OAuth                                                            |
+| Interface d'administration web                                | 0.3     | plus gros chantier, la CLI suffit pour commencer                           |
+| Formulaires déclaratifs,`GroupsField`                      | 0.3     | dépendent de l'interface d'administration                                 |
+| Authentification de l'administrateur (mot de passe, sessions) | 0.3     | dépend de l'interface d'administration                                    |
+| Resources et prompts MCP                                      | 0.4     | hors du cœur « Features → tools »                                      |
+| Système de plugins, secret managers (Vault…)                | 0.4     | à définir après stabilisation du noyau                                  |
+| Génération de documentation (`mircapgen docs`)            | 0.4     | le Helper couvre le besoin des agents en 0.1                               |
+| Observabilité (métriques, traces, OpenTelemetry)            | 0.5     | les logs structurés suffisent au début                                   |
 
 ---
 
